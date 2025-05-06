@@ -475,7 +475,7 @@ def render_data_exploration():
                             pivot_df,
                             labels=dict(color="Correlation"),
                             x=pivot_df.columns,
-                            y=pivot_df.columns,
+                            y=pivot_df.index,
                             color_continuous_scale='RdBu_r',
                             title=f"Correlation Heatmap - {dataset} Dataset"
                         )
