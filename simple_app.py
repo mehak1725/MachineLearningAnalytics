@@ -29,19 +29,27 @@ def ensure_dirs_exist():
 def load_weather_data():
     """Load weather data from CSV."""
     try:
-        df = pd.read_csv("attached_assets/weather_prediction_dataset.csv")
+        file_path = "attached_assets/weather_prediction_dataset.csv"
+        logging.info(f"Loading weather data from {file_path}")
+        df = pd.read_csv(file_path)
+        logging.info(f"Weather data loaded successfully with {len(df)} rows")
         return df
     except Exception as e:
         logging.error(f"Error loading weather data: {e}")
+        st.error(f"Error loading weather data: {e}")
         return None
 
 def load_temperature_data():
     """Load temperature data from CSV."""
     try:
-        df = pd.read_csv("attached_assets/BIG DATA GENERATED DATASET USED FOR ML.csv")
+        file_path = "attached_assets/BIG DATA GENERATED DATASET USED FOR ML.csv"
+        logging.info(f"Loading temperature data from {file_path}")
+        df = pd.read_csv(file_path)
+        logging.info(f"Temperature data loaded successfully with {len(df)} rows")
         return df
     except Exception as e:
         logging.error(f"Error loading temperature data: {e}")
+        st.error(f"Error loading temperature data: {e}")
         return None
 
 # Data processing
@@ -298,42 +306,39 @@ def navigation():
 # Data loading and processing
 def load_and_process_data():
     """Load data and process it."""
-    if not st.session_state.data_loaded:
-        with st.spinner("Loading datasets..."):
-            # Load weather and temperature data
-            weather_df = load_weather_data()
-            temp_df = load_temperature_data()
+    # Force data loading
+    with st.spinner("Loading datasets..."):
+        # Load weather and temperature data
+        weather_df = load_weather_data()
+        temp_df = load_temperature_data()
+        
+        if weather_df is not None and temp_df is not None:
+            st.session_state.data_loaded = True
+            st.session_state.weather_df = weather_df
+            st.session_state.temp_df = temp_df
+            logger.info("Data loaded")
             
-            if weather_df is not None and temp_df is not None:
-                st.session_state.data_loaded = True
-                st.session_state.weather_df = weather_df
-                st.session_state.temp_df = temp_df
-                st.success("Data loaded successfully!")
-                
-                logger.info("Data loaded")
-            else:
-                st.error("Failed to load data. Check logs for details.")
-    
-    if st.session_state.data_loaded and not st.session_state.data_processed:
-        with st.spinner("Processing data..."):
-            # Clean data
-            cleaned_weather = clean_dataset(st.session_state.weather_df, "weather")
-            cleaned_temp = clean_dataset(st.session_state.temp_df, "temperature")
+            # Immediately process data
+            cleaned_weather = clean_dataset(weather_df, "weather")
+            cleaned_temp = clean_dataset(temp_df, "temperature")
             
             if cleaned_weather is not None and cleaned_temp is not None:
                 st.session_state.cleaned_weather = cleaned_weather
                 st.session_state.cleaned_temp = cleaned_temp
                 st.session_state.data_processed = True
                 st.session_state.data_cleaned = True
-                st.success("Data processed successfully!")
-                
                 logger.info("Data processed")
             else:
+                logger.error("Failed to process data")
                 st.error("Failed to process data. Check logs for details.")
+        else:
+            logger.error("Failed to load data")
+            st.error("Failed to load data. Check logs for details.")
 
 def engineer_features():
     """Engineer features if data is loaded and processed."""
-    if st.session_state.data_loaded and st.session_state.data_processed and not st.session_state.features_engineered:
+    # Force feature engineering
+    if st.session_state.data_loaded and st.session_state.data_processed:
         with st.spinner("Engineering features..."):
             # Engineer features
             weather_features = engineer_weather_features(st.session_state.cleaned_weather)
@@ -343,10 +348,9 @@ def engineer_features():
                 st.session_state.weather_features = weather_features
                 st.session_state.temp_features = temp_features
                 st.session_state.features_engineered = True
-                st.success("Features engineered successfully!")
-                
                 logger.info("Features engineered")
             else:
+                logger.error("Failed to engineer features")
                 st.error("Failed to engineer features. Check logs for details.")
 
 # Page rendering functions
@@ -1041,16 +1045,15 @@ def main():
     # Initialize app
     init_app()
     
+    # Always load and process data on startup
+    load_and_process_data()
+    
+    # Always engineer features on startup
+    if st.session_state.data_processed:
+        engineer_features()
+    
     # Render navigation
     navigation()
-    
-    # Load and process data if needed
-    if not st.session_state.data_processed:
-        load_and_process_data()
-    
-    # Engineer features if needed
-    if st.session_state.data_processed and not st.session_state.features_engineered:
-        engineer_features()
     
     # Render the current page
     if st.session_state.current_page == "home":
