@@ -9,6 +9,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import logging
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -630,19 +631,12 @@ def render_classification_models():
     st.markdown("""
     ### Classification Model Demonstration
     
-    This simplified version demonstrates how classification modeling would work.
-    In the full PySpark version, we would implement:
-    
-    - Logistic Regression
-    - Random Forest
-    - Naive Bayes
-    - Gradient Boosted Trees
-    
-    For demonstration, we'll show how to set up a classification problem.
+    This section demonstrates how different classification models could be applied to weather data.
+    In a production environment, these models would be implemented using advanced ML libraries.
     """)
     
     # Create tabs for different aspects
-    tabs = st.tabs(["Problem Definition", "Feature Selection", "Model Training"])
+    tabs = st.tabs(["Problem Definition", "Feature Selection", "Model Training", "Model Comparison", "Advanced Models"])
     
     with tabs[0]:
         st.subheader("Classification Problem Definition")
@@ -661,6 +655,10 @@ def render_classification_models():
         3. **Weather Event Classification**:
            - Predict weather events like rain, snow, thunderstorm, etc.
            - Features: pressure changes, humidity, temperature, etc.
+           
+        4. **Extreme Weather Event Prediction**:
+           - Classify whether extreme weather conditions will occur
+           - Features: historical patterns, atmospheric pressure trends, etc.
         """)
         
         # Show sample distribution of a target variable
@@ -707,6 +705,14 @@ def render_classification_models():
         3. **Tree-based Methods**:
            - Use feature importance from tree-based models
            - Select top features based on importance scores
+           
+        4. **Recursive Feature Elimination (RFE)**:
+           - Start with all features, recursively eliminate the least significant
+           - Use a model to determine feature importance at each step
+           
+        5. **Principal Component Analysis (PCA)**:
+           - Transform features into uncorrelated components
+           - Select components that explain most of the variance
         """)
         
         # Show correlation between features and a categorical target
@@ -740,31 +746,307 @@ def render_classification_models():
                         st.plotly_chart(fig, use_container_width=True)
     
     with tabs[2]:
-        st.subheader("Model Training Process")
+        st.subheader("Model Training")
+        
+        # Demo classification models
+        model_type = st.selectbox(
+            "Select Classification Model",
+            ["Logistic Regression", "Random Forest", "Naive Bayes", "Gradient Boosted Trees", "Support Vector Machine"]
+        )
+        
+        st.markdown(f"### {model_type} Model")
+        
+        if model_type == "Logistic Regression":
+            st.markdown("""
+            **Logistic Regression** is a statistical model that uses a logistic function to model a binary dependent variable. 
+            It can be extended to multi-class classification using strategies like one-vs-rest.
+            
+            #### Hyperparameters:
+            - **Regularization Strength (C)**: Controls the strength of regularization (lower values = stronger regularization)
+            - **Penalty Type**: L1 (Lasso), L2 (Ridge), or Elastic Net
+            - **Max Iterations**: Maximum number of iterations for the solver
+            
+            #### Strengths:
+            - Simple and interpretable
+            - Works well for linearly separable classes
+            - Provides probability estimates
+            
+            #### Weaknesses:
+            - Limited complexity for modeling non-linear relationships
+            - May underperform with high-dimensional data
+            """)
+            
+            # Show sample training options
+            col1, col2 = st.columns(2)
+            with col1:
+                c_value = st.slider("Regularization Strength (C)", 0.01, 10.0, 1.0)
+                max_iter = st.slider("Max Iterations", 100, 1000, 100)
+            with col2:
+                penalty = st.selectbox("Penalty Type", ["l1", "l2", "elasticnet", "none"])
+                solver = st.selectbox("Solver", ["lbfgs", "liblinear", "newton-cg", "sag", "saga"])
+        
+        elif model_type == "Random Forest":
+            st.markdown("""
+            **Random Forest** is an ensemble learning method that operates by constructing multiple decision trees during training and outputting the class that is the mode of the classes of the individual trees.
+            
+            #### Hyperparameters:
+            - **Number of Trees**: How many trees to build in the forest
+            - **Max Depth**: Maximum depth of each tree
+            - **Min Samples Split**: Minimum samples required to split a node
+            - **Min Samples Leaf**: Minimum samples required at a leaf node
+            
+            #### Strengths:
+            - Handles non-linear relationships well
+            - Robust to outliers and noise
+            - Provides feature importance scores
+            
+            #### Weaknesses:
+            - Less interpretable than single decision trees
+            - Can be computationally intensive for large datasets
+            """)
+            
+            # Show sample training options
+            col1, col2 = st.columns(2)
+            with col1:
+                n_estimators = st.slider("Number of Trees", 10, 500, 100)
+                max_depth = st.slider("Max Depth", 1, 50, 10)
+            with col2:
+                min_samples_split = st.slider("Min Samples Split", 2, 20, 2)
+                criterion = st.selectbox("Split Criterion", ["gini", "entropy"])
+        
+        elif model_type == "Naive Bayes":
+            st.markdown("""
+            **Naive Bayes** classifiers are a family of simple probabilistic classifiers based on applying Bayes' theorem with strong (naive) independence assumptions between the features.
+            
+            #### Types:
+            - **Gaussian NB**: For continuous data, assumes Gaussian distribution
+            - **Multinomial NB**: For discrete data (e.g., text classification)
+            - **Bernoulli NB**: For binary/boolean features
+            
+            #### Hyperparameters:
+            - **Alpha**: Smoothing parameter (additive smoothing)
+            - **Fit Prior**: Whether to learn class prior probabilities
+            
+            #### Strengths:
+            - Simple and fast to train
+            - Works well with small datasets and high dimensions
+            - Good with text classification problems
+            
+            #### Weaknesses:
+            - Assumption of feature independence (often unrealistic)
+            - May be outperformed by more complex models
+            """)
+            
+            # Show sample training options
+            nb_type = st.selectbox("Naive Bayes Type", ["Gaussian", "Multinomial", "Bernoulli"])
+            alpha = st.slider("Alpha (Smoothing)", 0.0, 2.0, 1.0, 0.1)
+            fit_prior = st.checkbox("Fit Prior", True)
+        
+        elif model_type == "Gradient Boosted Trees":
+            st.markdown("""
+            **Gradient Boosted Trees** are an ensemble learning method that builds trees one at a time, where each new tree helps correct errors made by previously trained trees.
+            
+            #### Hyperparameters:
+            - **Learning Rate**: Controls the contribution of each tree
+            - **Number of Estimators**: Total number of trees to build
+            - **Max Depth**: Maximum depth of each tree
+            - **Subsample**: Fraction of samples to use for fitting
+            
+            #### Strengths:
+            - Often provides the highest accuracy
+            - Can handle different types of data
+            - Has good customization options
+            
+            #### Weaknesses:
+            - More prone to overfitting than Random Forest
+            - Requires careful tuning of hyperparameters
+            - Slower to train and predict
+            """)
+            
+            # Show sample training options
+            col1, col2 = st.columns(2)
+            with col1:
+                learning_rate = st.slider("Learning Rate", 0.01, 1.0, 0.1)
+                n_estimators = st.slider("Number of Estimators", 10, 500, 100)
+            with col2:
+                max_depth = st.slider("Max Depth", 1, 10, 3)
+                subsample = st.slider("Subsample", 0.1, 1.0, 1.0, 0.1)
+                
+        elif model_type == "Support Vector Machine":
+            st.markdown("""
+            **Support Vector Machine (SVM)** works by finding the hyperplane that best divides a dataset into classes. SVMs can also use kernel methods to transform the data into higher dimensions where separation might be easier.
+            
+            #### Hyperparameters:
+            - **Kernel**: Function to transform the data (linear, polynomial, rbf, sigmoid)
+            - **C Parameter**: Regularization parameter
+            - **Gamma**: Kernel coefficient (for rbf, poly, sigmoid)
+            
+            #### Strengths:
+            - Effective in high-dimensional spaces
+            - Works well when classes are separable
+            - Versatile through different kernel functions
+            
+            #### Weaknesses:
+            - Doesn't scale well to large datasets
+            - Longer training time for large datasets
+            - Can be sensitive to hyperparameter choices
+            """)
+            
+            # Show sample training options
+            col1, col2 = st.columns(2)
+            with col1:
+                kernel = st.selectbox("Kernel", ["linear", "poly", "rbf", "sigmoid"])
+                c_value = st.slider("C Parameter", 0.1, 10.0, 1.0)
+            with col2:
+                gamma = st.selectbox("Gamma", ["scale", "auto", "value"])
+                if gamma == "value":
+                    gamma_value = st.slider("Gamma Value", 0.001, 1.0, 0.1)
+                degree = st.slider("Degree (for poly kernel)", 2, 5, 3)
+        
+        # Training button (simulated)
+        if st.button("Train Model"):
+            with st.spinner(f"Training {model_type}..."):
+                # Simulate training time
+                time.sleep(1)
+                st.success(f"{model_type} model trained successfully!")
+                
+                # Show sample metrics
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Accuracy", "0.87", "0.05")
+                with col2:
+                    st.metric("Precision", "0.83", "0.03")
+                with col3:
+                    st.metric("Recall", "0.89", "0.07")
+                
+                # Sample visualization of results
+                st.subheader("Classification Report")
+                
+                # Create synthetic classification report
+                class_report = pd.DataFrame({
+                    'Class': ['Freezing', 'Cold', 'Mild', 'Warm', 'Hot', 'Average/Total'],
+                    'Precision': [0.94, 0.88, 0.82, 0.86, 0.91, 0.87],
+                    'Recall': [0.90, 0.84, 0.87, 0.93, 0.88, 0.89],
+                    'F1-Score': [0.92, 0.86, 0.84, 0.89, 0.90, 0.88],
+                    'Support': [50, 75, 100, 98, 80, 403]
+                })
+                
+                st.dataframe(class_report)
+    
+    with tabs[3]:
+        st.subheader("Model Comparison")
         
         st.markdown("""
-        #### Classification Model Training Steps
+        #### Comparing Classification Models
         
-        1. **Data Preparation**:
-           - Split data into training (80%) and testing (20%) sets
-           - Encode categorical variables
-           - Scale numerical features
-        
-        2. **Model Selection and Training**:
-           - Train different classification models
-           - Tune hyperparameters using cross-validation
-        
-        3. **Model Evaluation**:
-           - Accuracy, Precision, Recall, F1 Score
-           - Confusion Matrix
-           - ROC Curve (for binary classification)
-        
-        4. **Feature Importance Analysis**:
-           - Understand which features contribute most to predictions
+        Selecting the right classification model requires comparing multiple options on the same dataset.
+        Here's how different models might perform on a weather classification task:
         """)
         
+        # Create sample comparative data
+        model_names = ['Logistic Regression', 'Random Forest', 'Naive Bayes', 'Gradient Boosted Trees', 'SVM']
+        accuracies = [0.78, 0.85, 0.72, 0.88, 0.82]
+        f1_scores = [0.76, 0.84, 0.70, 0.87, 0.81]
+        training_times = [5, 25, 3, 40, 15]  # in seconds
+        
+        # Create comparison figure
+        fig = go.Figure()
+        
+        fig.add_trace(go.Bar(
+            x=model_names,
+            y=accuracies,
+            name='Accuracy',
+            marker_color='royalblue'
+        ))
+        
+        fig.add_trace(go.Bar(
+            x=model_names,
+            y=f1_scores,
+            name='F1 Score',
+            marker_color='darkgreen'
+        ))
+        
+        fig.update_layout(
+            title='Model Performance Comparison',
+            xaxis_title='Model',
+            yaxis_title='Score',
+            barmode='group',
+            yaxis=dict(range=[0, 1])
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Training time visualization
+        fig2 = px.bar(
+            x=model_names, 
+            y=training_times,
+            title='Training Time Comparison',
+            labels={'x': 'Model', 'y': 'Training Time (seconds)'},
+            color=training_times,
+            color_continuous_scale='Viridis'
+        )
+        
+        st.plotly_chart(fig2, use_container_width=True)
+        
+        st.markdown("""
+        #### Key Insights:
+        - **Gradient Boosted Trees** typically provides the highest accuracy but takes longer to train
+        - **Naive Bayes** is the fastest to train but often has lower accuracy
+        - **Random Forest** provides a good balance of accuracy and training time
+        - **SVM** can perform well on smaller datasets but doesn't scale as well
+        - **Logistic Regression** is simple and interpretable but may miss complex patterns
+        
+        The best model depends on your specific problem, data characteristics, and requirements.
+        """)
+        
+    with tabs[4]:
+        st.subheader("Advanced Classification Techniques")
+        
+        st.markdown("""
+        #### Advanced Models and Approaches
+        
+        Beyond standard classification models, these advanced techniques can further improve performance:
+        
+        1. **Ensemble Methods**:
+           - **Voting Classifiers**: Combine predictions from multiple models
+           - **Stacking**: Train a meta-model on the outputs of base models
+           
+        2. **Neural Networks**:
+           - **Multilayer Perceptrons (MLP)**: Deep learning for complex patterns
+           - **Convolutional Neural Networks (CNNs)**: For spatial data like radar images
+           
+        3. **Time Series Classification**:
+           - **LSTM/RNN**: For sequential weather data with temporal dependencies
+           - **Dynamic Time Warping**: For comparing weather pattern sequences
+           
+        4. **Automated Machine Learning (AutoML)**:
+           - Automatically selects models and tunes hyperparameters
+           - Useful for finding optimal configurations efficiently
+        """)
+        
+        # Example visualization of ensemble method
+        st.subheader("Example: Voting Classifier")
+        
+        # Create sample data
+        methods = ['Individual Models', 'Hard Voting', 'Soft Voting']
+        accuracy = [0.85, 0.87, 0.89]
+        
+        fig = px.bar(
+            x=methods,
+            y=accuracy,
+            title="Ensemble Method Performance",
+            labels={'x': 'Method', 'y': 'Accuracy'},
+            color=accuracy,
+            color_continuous_scale='Blues',
+            text=accuracy
+        )
+        
+        fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
         # Show a sample confusion matrix visualization
-        st.subheader("Sample Model Evaluation Visualization")
+        st.subheader("Sample Confusion Matrix")
         
         # Create synthetic confusion matrix
         labels = ['Freezing', 'Cold', 'Mild', 'Warm', 'Hot']
@@ -819,19 +1101,12 @@ def render_regression_models():
     st.markdown("""
     ### Regression Model Demonstration
     
-    This simplified version demonstrates how regression modeling would work.
-    In the full PySpark version, we would implement:
-    
-    - Linear Regression
-    - Decision Tree Regressor
-    - Random Forest Regressor
-    - Gradient Boosted Trees Regressor
-    
-    For demonstration, we'll show how to set up a regression problem.
+    This section demonstrates how different regression models could be applied to weather data.
+    In a production environment, these models would be implemented using advanced ML libraries.
     """)
     
     # Create tabs for different aspects
-    tabs = st.tabs(["Problem Definition", "Feature Selection", "Model Training"])
+    tabs = st.tabs(["Problem Definition", "Feature Selection", "Model Training", "Model Comparison", "Advanced Models"])
     
     with tabs[0]:
         st.subheader("Regression Problem Definition")
@@ -850,6 +1125,14 @@ def render_regression_models():
         3. **Wind Speed Prediction**:
            - Predict exact wind speed values
            - Features: pressure gradients, temperature differentials, etc.
+           
+        4. **Solar Radiation Forecasting**:
+           - Predict solar radiation levels
+           - Features: cloud cover, time of year, latitude, etc.
+           
+        5. **Humidity Prediction**:
+           - Predict relative humidity levels
+           - Features: temperature, pressure, proximity to water bodies, etc.
         """)
         
         # Show distribution of a potential target variable
@@ -896,6 +1179,14 @@ def render_regression_models():
         3. **Regularization Methods**:
            - Lasso (L1) regularization for feature selection
            - Shrinks less important feature coefficients to zero
+           
+        4. **Feature Importance from Tree Models**:
+           - Use Random Forest or Gradient Boosting to rank features
+           - Select top features based on importance scores
+           
+        5. **Variance Inflation Factor (VIF)**:
+           - Detect multicollinearity among predictors
+           - Remove features with high VIF values
         """)
         
         # Show correlation between features and a numerical target
@@ -937,32 +1228,440 @@ def render_regression_models():
                     st.plotly_chart(fig, use_container_width=True)
     
     with tabs[2]:
-        st.subheader("Model Training Process")
+        st.subheader("Model Training")
+        
+        # Demo regression models
+        model_type = st.selectbox(
+            "Select Regression Model",
+            ["Linear Regression", "Decision Tree", "Random Forest", "Gradient Boosting", "Support Vector Regression", "Neural Network"]
+        )
+        
+        st.markdown(f"### {model_type}")
+        
+        if model_type == "Linear Regression":
+            st.markdown("""
+            **Linear Regression** models the relationship between a dependent variable and one or more independent variables using a linear equation.
+            
+            #### Hyperparameters:
+            - **Regularization Type**: None, Ridge (L2), or Lasso (L1)
+            - **Regularization Strength (alpha)**: Controls the amount of regularization
+            - **Fit Intercept**: Whether to include a bias/intercept term
+            
+            #### Strengths:
+            - Simple and interpretable
+            - Fast to train and predict
+            - Provides feature coefficients showing importance and direction
+            
+            #### Weaknesses:
+            - Assumes linear relationship between features and target
+            - Sensitive to outliers
+            - Limited capacity for modeling complex, non-linear relationships
+            """)
+            
+            # Show sample training options
+            col1, col2 = st.columns(2)
+            with col1:
+                reg_type = st.selectbox("Regularization Type", ["None", "Ridge (L2)", "Lasso (L1)", "ElasticNet"])
+                fit_intercept = st.checkbox("Fit Intercept", True)
+            with col2:
+                alpha = st.slider("Regularization Strength (alpha)", 0.0, 1.0, 0.1, 0.01)
+                normalize = st.checkbox("Normalize Features", False)
+        
+        elif model_type == "Decision Tree":
+            st.markdown("""
+            **Decision Tree Regression** uses a tree-like model of decisions where each node represents a feature, each branch represents a decision, and each leaf represents an outcome (prediction).
+            
+            #### Hyperparameters:
+            - **Max Depth**: Maximum depth of the tree
+            - **Min Samples Split**: Minimum samples required to split a node
+            - **Min Samples Leaf**: Minimum samples required at a leaf node
+            - **Criterion**: Function to measure the quality of a split (MSE, MAE)
+            
+            #### Strengths:
+            - Can model non-linear relationships
+            - No assumptions about data distribution
+            - Feature importance and decision rules are easy to understand
+            
+            #### Weaknesses:
+            - Tendency to overfit if not pruned
+            - Can be unstable (small changes in data can result in very different trees)
+            - Limited prediction smoothness (step-wise predictions)
+            """)
+            
+            # Show sample training options
+            col1, col2 = st.columns(2)
+            with col1:
+                max_depth = st.slider("Max Depth", 1, 50, 10)
+                min_samples_split = st.slider("Min Samples Split", 2, 20, 2)
+            with col2:
+                min_samples_leaf = st.slider("Min Samples Leaf", 1, 20, 1)
+                criterion = st.selectbox("Criterion", ["mse", "mae"])
+        
+        elif model_type == "Random Forest":
+            st.markdown("""
+            **Random Forest Regression** is an ensemble learning method that operates by constructing multiple decision trees at training time and outputting the mean prediction of the individual trees.
+            
+            #### Hyperparameters:
+            - **Number of Estimators**: Number of trees in the forest
+            - **Max Depth**: Maximum depth of each tree
+            - **Min Samples Split**: Minimum samples required to split a node
+            - **Max Features**: Maximum number of features to consider for splitting
+            
+            #### Strengths:
+            - More robust and less prone to overfitting than a single decision tree
+            - Handles high-dimensional data well
+            - Provides feature importance scores
+            
+            #### Weaknesses:
+            - Less interpretable than a single decision tree
+            - Computationally more intensive than simpler models
+            - Can be slow for large datasets
+            """)
+            
+            # Show sample training options
+            col1, col2 = st.columns(2)
+            with col1:
+                n_estimators = st.slider("Number of Estimators", 10, 500, 100)
+                max_depth = st.slider("Max Depth", 1, 50, 10)
+            with col2:
+                min_samples_split = st.slider("Min Samples Split", 2, 20, 2)
+                max_features = st.selectbox("Max Features", ["auto", "sqrt", "log2", "All"])
+        
+        elif model_type == "Gradient Boosting":
+            st.markdown("""
+            **Gradient Boosting Regression** builds trees sequentially, where each tree corrects the errors of the previous ones, using gradient descent to minimize the loss function.
+            
+            #### Hyperparameters:
+            - **Learning Rate**: Shrinks the contribution of each tree
+            - **Number of Estimators**: Total number of trees to build
+            - **Max Depth**: Maximum depth of each tree
+            - **Subsample**: Fraction of samples to use for fitting individual trees
+            
+            #### Strengths:
+            - Often provides better performance than most other algorithms
+            - Robust to outliers and can handle different types of data
+            - Automatically handles feature interactions
+            
+            #### Weaknesses:
+            - Prone to overfitting if not carefully tuned
+            - Computationally intensive
+            - More hyperparameters to tune
+            """)
+            
+            # Show sample training options
+            col1, col2 = st.columns(2)
+            with col1:
+                learning_rate = st.slider("Learning Rate", 0.01, 0.5, 0.1, 0.01)
+                n_estimators = st.slider("Number of Estimators", 10, 500, 100)
+            with col2:
+                max_depth = st.slider("Max Depth", 1, 10, 3)
+                subsample = st.slider("Subsample", 0.5, 1.0, 1.0, 0.1)
+                
+        elif model_type == "Support Vector Regression":
+            st.markdown("""
+            **Support Vector Regression (SVR)** uses the same principles as SVM, but for regression tasks. It tries to find a function that deviates from the target by a value no greater than a margin of tolerance.
+            
+            #### Hyperparameters:
+            - **Kernel**: Function to transform the data (linear, polynomial, rbf, sigmoid)
+            - **C Parameter**: Penalty parameter of the error term
+            - **Epsilon**: Specifies the margin of tolerance inside which no penalty is given
+            - **Gamma**: Kernel coefficient for rbf, poly and sigmoid kernels
+            
+            #### Strengths:
+            - Works well for high-dimensional data
+            - Different kernel functions allow for flexibility in modeling
+            - Good generalization potential
+            
+            #### Weaknesses:
+            - Computationally intensive for large datasets
+            - Difficult to interpret
+            - Sensitive to hyperparameter choices
+            """)
+            
+            # Show sample training options
+            col1, col2 = st.columns(2)
+            with col1:
+                kernel = st.selectbox("Kernel", ["linear", "poly", "rbf", "sigmoid"])
+                c_value = st.slider("C Parameter", 0.1, 10.0, 1.0)
+            with col2:
+                epsilon = st.slider("Epsilon", 0.01, 1.0, 0.1)
+                gamma = st.selectbox("Gamma", ["scale", "auto", "value"])
+                if gamma == "value":
+                    gamma_value = st.slider("Gamma Value", 0.001, 1.0, 0.1)
+                    
+        elif model_type == "Neural Network":
+            st.markdown("""
+            **Neural Network Regression** uses a multi-layer perceptron (MLP) to learn a non-linear function approximator for regression.
+            
+            #### Hyperparameters:
+            - **Hidden Layer Sizes**: Number of neurons in each hidden layer
+            - **Activation Function**: Function for non-linearity (relu, tanh, sigmoid)
+            - **Learning Rate**: Controls the step size during optimization
+            - **Solver**: Algorithm for weight optimization
+            
+            #### Strengths:
+            - Can model highly complex, non-linear relationships
+            - Flexible architecture can be adapted to many problems
+            - Automatically learns feature interactions
+            
+            #### Weaknesses:
+            - Requires more data to train effectively
+            - Computationally intensive
+            - "Black box" - difficult to interpret
+            """)
+            
+            # Show sample training options
+            col1, col2 = st.columns(2)
+            with col1:
+                hidden_layers = st.text_input("Hidden Layer Sizes (comma-separated)", "100,50")
+                activation = st.selectbox("Activation Function", ["relu", "tanh", "logistic"])
+            with col2:
+                learning_rate = st.slider("Learning Rate", 0.001, 0.1, 0.01, 0.001)
+                solver = st.selectbox("Solver", ["adam", "sgd", "lbfgs"])
+        
+        # Training button (simulated)
+        if st.button("Train Model"):
+            with st.spinner(f"Training {model_type}..."):
+                # Simulate training time
+                time.sleep(1)
+                st.success(f"{model_type} model trained successfully!")
+                
+                # Show sample metrics
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("RMSE", "2.35", "-0.42")
+                with col2:
+                    st.metric("MAE", "1.89", "-0.31")
+                with col3:
+                    st.metric("R²", "0.84", "0.05")
+                
+                # Sample visualization of results
+                st.subheader("Model Evaluation")
+                
+                # Create synthetic predictions and actual values
+                np.random.seed(42)
+                n_samples = 100
+                actual = np.random.normal(20, 5, n_samples)
+                predictions = actual + np.random.normal(0, 2, n_samples)
+                
+                # Create DataFrame
+                results_df = pd.DataFrame({
+                    'Actual': actual,
+                    'Predicted': predictions
+                })
+                
+                # Create scatter plot
+                fig = px.scatter(
+                    results_df,
+                    x='Actual',
+                    y='Predicted',
+                    title="Predictions vs Actual Values",
+                    labels={'Actual': "Actual Temperature", 'Predicted': "Predicted Temperature"}
+                )
+                
+                # Add 45-degree reference line
+                min_val = min(results_df['Actual'].min(), results_df['Predicted'].min())
+                max_val = max(results_df['Actual'].max(), results_df['Predicted'].max())
+                fig.add_trace(
+                    go.Scatter(
+                        x=[min_val, max_val],
+                        y=[min_val, max_val],
+                        mode='lines',
+                        name='Perfect Prediction',
+                        line=dict(color='red', dash='dash')
+                    )
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Show residual plot
+                results_df['Residual'] = results_df['Actual'] - results_df['Predicted']
+                
+                fig = px.scatter(
+                    results_df,
+                    x='Predicted',
+                    y='Residual',
+                    title="Residual Plot",
+                    labels={'Predicted': "Predicted Temperature", 'Residual': "Residual (Actual - Predicted)"}
+                )
+                
+                # Add horizontal reference line at y=0
+                fig.add_hline(y=0, line_dash="dash", line_color="red")
+                
+                st.plotly_chart(fig, use_container_width=True)
+    
+    with tabs[3]:
+        st.subheader("Model Comparison")
         
         st.markdown("""
-        #### Regression Model Training Steps
+        #### Comparing Regression Models
         
-        1. **Data Preparation**:
-           - Split data into training (80%) and testing (20%) sets
-           - Scale numerical features
-           - Handle categorical variables
-        
-        2. **Model Selection and Training**:
-           - Train different regression models
-           - Tune hyperparameters using cross-validation
-        
-        3. **Model Evaluation**:
-           - RMSE (Root Mean Squared Error)
-           - MAE (Mean Absolute Error)
-           - R² (Coefficient of Determination)
-        
-        4. **Residual Analysis**:
-           - Check for patterns in residuals
-           - Validate model assumptions
+        Evaluating multiple regression models helps identify the best approach for a specific prediction task.
+        Here's how different models might perform on a weather prediction task:
         """)
         
+        # Create sample comparative data
+        model_names = ['Linear Regression', 'Decision Tree', 'Random Forest', 'Gradient Boosting', 'SVR', 'Neural Network']
+        rmse_scores = [3.45, 2.87, 2.41, 2.35, 2.68, 2.39]
+        r2_scores = [0.71, 0.79, 0.83, 0.84, 0.80, 0.83]
+        training_times = [2, 8, 25, 40, 15, 60]  # in seconds
+        
+        # Create comparison figure
+        fig = go.Figure()
+        
+        fig.add_trace(go.Bar(
+            x=model_names,
+            y=rmse_scores,
+            name='RMSE',
+            marker_color='indianred'
+        ))
+        
+        fig.update_layout(
+            title='Model Error Comparison (RMSE)',
+            xaxis_title='Model',
+            yaxis_title='RMSE (lower is better)',
+            barmode='group'
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # R² score visualization
+        fig2 = px.bar(
+            x=model_names, 
+            y=r2_scores,
+            title='R² Score Comparison',
+            labels={'x': 'Model', 'y': 'R² Score (higher is better)'},
+            color=r2_scores,
+            color_continuous_scale='Viridis'
+        )
+        
+        fig2.update_layout(yaxis_range=[0, 1])
+        
+        st.plotly_chart(fig2, use_container_width=True)
+        
+        # Training time visualization
+        fig3 = px.bar(
+            x=model_names, 
+            y=training_times,
+            title='Training Time Comparison',
+            labels={'x': 'Model', 'y': 'Training Time (seconds)'},
+            color=training_times,
+            color_continuous_scale='Plasma'
+        )
+        
+        st.plotly_chart(fig3, use_container_width=True)
+        
+        st.markdown("""
+        #### Key Insights:
+        - **Gradient Boosting** typically provides the lowest error but has longer training times
+        - **Linear Regression** is fastest to train but often has higher error for complex data
+        - **Random Forest** and **Neural Networks** offer good balance of accuracy and complexity
+        - **SVR** with the right kernel can perform well on specific types of data
+        
+        The optimal choice depends on your specific requirements for accuracy, training speed, and interpretability.
+        """)
+        
+    with tabs[4]:
+        st.subheader("Advanced Regression Techniques")
+        
+        st.markdown("""
+        #### Advanced Models and Approaches
+        
+        Beyond standard regression models, these advanced techniques can further improve performance:
+        
+        1. **Ensemble Methods**:
+           - **Stacking**: Combine predictions from multiple models using a meta-model
+           - **Blending**: Similar to stacking but uses a hold-out set for training the meta-model
+           
+        2. **Time Series Specific Models**:
+           - **ARIMA**: For univariate time series forecasting
+           - **Prophet**: Facebook's tool for forecasting time series data
+           - **LSTM/GRU**: Neural network architectures for sequence data
+           
+        3. **Gaussian Processes**:
+           - Probabilistic approach that provides uncertainty estimates
+           - Particularly useful when training data is limited
+           
+        4. **Quantile Regression**:
+           - Predicts a range or interval rather than a single point
+           - Useful for modeling uncertainty in weather predictions
+        """)
+        
+        # Example visualization of ensemble method
+        st.subheader("Example: Stacking Ensemble")
+        
+        # Create sample data
+        methods = ['Single Best Model', 'Average Ensemble', 'Weighted Ensemble', 'Stacking']
+        rmse = [2.35, 2.21, 2.15, 1.98]
+        
+        fig = px.bar(
+            x=methods,
+            y=rmse,
+            title="Ensemble Method Performance",
+            labels={'x': 'Method', 'y': 'RMSE (lower is better)'},
+            color=rmse,
+            color_continuous_scale='RdBu_r'
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Show prediction intervals
+        st.subheader("Example: Prediction Intervals")
+        
+        # Create sample data for prediction intervals
+        np.random.seed(42)
+        x = np.linspace(0, 10, 50)
+        y = 5 + 0.5 * x + np.random.normal(0, 1, 50)
+        
+        # Create prediction lines
+        x_pred = np.linspace(0, 10, 100)
+        y_pred = 5 + 0.5 * x_pred
+        y_lower = y_pred - 1.96
+        y_upper = y_pred + 1.96
+        
+        # Create figure
+        fig = go.Figure()
+        
+        # Add scattered points
+        fig.add_trace(go.Scatter(
+            x=x, 
+            y=y, 
+            mode='markers', 
+            name='Observations',
+            marker=dict(color='blue', size=8)
+        ))
+        
+        # Add prediction line
+        fig.add_trace(go.Scatter(
+            x=x_pred, 
+            y=y_pred, 
+            mode='lines', 
+            name='Prediction',
+            line=dict(color='red', width=2)
+        ))
+        
+        # Add prediction intervals
+        fig.add_trace(go.Scatter(
+            x=np.concatenate([x_pred, x_pred[::-1]]),
+            y=np.concatenate([y_upper, y_lower[::-1]]),
+            fill='toself',
+            fillcolor='rgba(231,107,243,0.2)',
+            line=dict(color='rgba(255,255,255,0)'),
+            showlegend=True,
+            name='95% Prediction Interval'
+        ))
+        
+        fig.update_layout(
+            title='Regression with Prediction Intervals',
+            xaxis_title='X',
+            yaxis_title='Y',
+            legend=dict(x=0, y=1, traceorder='normal')
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
         # Show sample predictions vs actual plot
-        st.subheader("Sample Model Evaluation Visualization")
+        st.subheader("Sample Model Evaluation")
         
         # Create synthetic predictions and actual values
         np.random.seed(42)
@@ -997,22 +1696,6 @@ def render_regression_models():
                 line=dict(color='red', dash='dash')
             )
         )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Show residual plot
-        results_df['Residual'] = results_df['Actual'] - results_df['Predicted']
-        
-        fig = px.scatter(
-            results_df,
-            x='Predicted',
-            y='Residual',
-            title="Residual Plot",
-            labels={'Predicted': "Predicted Temperature", 'Residual': "Residual (Actual - Predicted)"}
-        )
-        
-        # Add horizontal reference line at y=0
-        fig.add_hline(y=0, line_dash="dash", line_color="red")
         
         st.plotly_chart(fig, use_container_width=True)
         
