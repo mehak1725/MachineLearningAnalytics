@@ -1472,12 +1472,12 @@ def render_regression_models():
                     )
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key="predictions_actual_scatter")
                 
                 # Show residual plot
                 results_df['Residual'] = results_df['Actual'] - results_df['Predicted']
                 
-                fig = px.scatter(
+                fig2 = px.scatter(
                     results_df,
                     x='Predicted',
                     y='Residual',
@@ -1486,9 +1486,9 @@ def render_regression_models():
                 )
                 
                 # Add horizontal reference line at y=0
-                fig.add_hline(y=0, line_dash="dash", line_color="red")
+                fig2.add_hline(y=0, line_dash="dash", line_color="red")
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig2, use_container_width=True, key="residual_scatter")
     
     with tabs[3]:
         st.subheader("Model Comparison")
@@ -1523,7 +1523,7 @@ def render_regression_models():
             barmode='group'
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="rmse_comparison")
         
         # R² score visualization
         fig2 = px.bar(
@@ -1537,7 +1537,7 @@ def render_regression_models():
         
         fig2.update_layout(yaxis_range=[0, 1])
         
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True, key="r2_comparison")
         
         # Training time visualization
         fig3 = px.bar(
@@ -1549,7 +1549,7 @@ def render_regression_models():
             color_continuous_scale='Plasma'
         )
         
-        st.plotly_chart(fig3, use_container_width=True)
+        st.plotly_chart(fig3, use_container_width=True, key="training_time_comparison")
         
         st.markdown("""
         #### Key Insights:
@@ -1603,7 +1603,7 @@ def render_regression_models():
             color_continuous_scale='RdBu_r'
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="ensemble_performance")
         
         # Show prediction intervals
         st.subheader("Example: Prediction Intervals")
@@ -1620,10 +1620,10 @@ def render_regression_models():
         y_upper = y_pred + 1.96
         
         # Create figure
-        fig = go.Figure()
+        fig4 = go.Figure()
         
         # Add scattered points
-        fig.add_trace(go.Scatter(
+        fig4.add_trace(go.Scatter(
             x=x, 
             y=y, 
             mode='markers', 
@@ -1632,7 +1632,7 @@ def render_regression_models():
         ))
         
         # Add prediction line
-        fig.add_trace(go.Scatter(
+        fig4.add_trace(go.Scatter(
             x=x_pred, 
             y=y_pred, 
             mode='lines', 
@@ -1641,7 +1641,7 @@ def render_regression_models():
         ))
         
         # Add prediction intervals
-        fig.add_trace(go.Scatter(
+        fig4.add_trace(go.Scatter(
             x=np.concatenate([x_pred, x_pred[::-1]]),
             y=np.concatenate([y_upper, y_lower[::-1]]),
             fill='toself',
@@ -1651,14 +1651,14 @@ def render_regression_models():
             name='95% Prediction Interval'
         ))
         
-        fig.update_layout(
+        fig4.update_layout(
             title='Regression with Prediction Intervals',
             xaxis_title='X',
             yaxis_title='Y',
             legend=dict(x=0, y=1, traceorder='normal')
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig4, use_container_width=True, key="prediction_intervals")
         
         # Show sample predictions vs actual plot
         st.subheader("Sample Model Evaluation")
@@ -1676,7 +1676,7 @@ def render_regression_models():
         })
         
         # Create scatter plot
-        fig = px.scatter(
+        fig5 = px.scatter(
             results_df,
             x='Actual',
             y='Predicted',
@@ -1687,7 +1687,7 @@ def render_regression_models():
         # Add 45-degree reference line
         min_val = min(results_df['Actual'].min(), results_df['Predicted'].min())
         max_val = max(results_df['Actual'].max(), results_df['Predicted'].max())
-        fig.add_trace(
+        fig5.add_trace(
             go.Scatter(
                 x=[min_val, max_val],
                 y=[min_val, max_val],
@@ -1697,7 +1697,7 @@ def render_regression_models():
             )
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig5, use_container_width=True, key="advanced_predictions_actual")
         
         # Calculate and display metrics
         rmse = np.sqrt(np.mean((results_df['Actual'] - results_df['Predicted'])**2))
